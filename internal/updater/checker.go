@@ -19,7 +19,10 @@ import (
 )
 
 const (
-	// GitHubAPIURL is the endpoint for fetching the latest release
+	// GitHubAPIURL is the endpoint for fetching the latest release.
+	// GitHub unauthenticated API rate limit is 60 req/hr per IP. The Checker
+	// honours CheckInterval to stay well below this. In shared CI environments,
+	// set GITHUB_TOKEN to use authenticated requests with a 5000 req/hr limit.
 	GitHubAPIURL = "https://api.github.com/repos/dotandev/glassbox/releases/latest"
 	// CheckInterval is how often we check for updates (24 hours)
 	CheckInterval = 24 * time.Hour
@@ -93,6 +96,9 @@ func (c *Checker) CheckForUpdates() {
 func (c *Checker) shouldCheck() (bool, error) {
 	cacheFile := filepath.Join(c.cacheDir, "last_update_check")
 
+	// The cache file stores CacheData JSON. If the file is absent or
+	// unreadable, treat this as "check now" to ensure updates are detected on
+	// first run.
 	data, err := os.ReadFile(cacheFile)
 	if err != nil {
 		// Cache doesn't exist or can't be read - should check
